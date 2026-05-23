@@ -1,9 +1,8 @@
 import { API_BASE } from "./config.js";
 import { installConsoleCapture, startConsoleDrain } from "./console-capture.js";
-import { startMetricsFlush } from "./metrics.js";
 import { startNetworkCapture } from "./network-capture.js";
 import { createCaptureState } from "./state.js";
-import { createTransport } from "./transport.js";
+import { createTransport, startMetricsFlush } from "./telemetry.js";
 import { createRenderer } from "./ui.js";
 
 const output = document.getElementById("output");

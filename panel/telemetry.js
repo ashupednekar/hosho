@@ -1,3 +1,6 @@
+import { ENDPOINTS, METRICS_FLUSH_INTERVAL_MS } from "./config.js";
+import { toMetricsPayload } from "./state.js";
+
 export function createTransport({ apiBase, render }) {
   return {
     async send(path, payload) {
@@ -15,4 +18,13 @@ export function createTransport({ apiBase, render }) {
       }
     },
   };
+}
+
+export function startMetricsFlush({ chromeDevtools, state, transport }) {
+  setInterval(() => {
+    transport.send(
+      ENDPOINTS.metrics,
+      toMetricsPayload(state, chromeDevtools.inspectedWindow.tabId),
+    );
+  }, METRICS_FLUSH_INTERVAL_MS);
 }
