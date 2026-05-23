@@ -1,6 +1,6 @@
 import { API_BASE } from "./config.js";
-import { installConsoleCapture, startConsoleDrain } from "./console-capture.js";
-import { startNetworkCapture } from "./network-capture.js";
+import { installConsoleCapture, startConsoleDrain } from "./capture/console.js";
+import { startNetworkCapture } from "./capture/network.js";
 import { createCaptureState } from "./state.js";
 import { createTransport, startMetricsFlush } from "./telemetry.js";
 import { createRenderer } from "./ui.js";

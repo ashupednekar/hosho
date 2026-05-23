@@ -3,8 +3,8 @@ import {
   CONSOLE_DRAIN_INTERVAL_MS,
   CONSOLE_INSTALLED_FLAG,
   ENDPOINTS,
-} from "./config.js";
-import { recordConsoleEvent } from "./state.js";
+} from "../config.js";
+import { recordConsoleEvent } from "../state.js";
 
 export function installConsoleCapture(chromeDevtools) {
   chromeDevtools.inspectedWindow.eval(`(() => {
