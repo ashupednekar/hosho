@@ -49,7 +49,7 @@ export function installConsoleCapture(chromeDevtools) {
   })()`);
 }
 
-export function startConsoleDrain({ chromeDevtools, state, transport, render }) {
+export function startConsoleDrain({ chromeDevtools, state, sendTelemetry, render }) {
   setInterval(() => {
     chromeDevtools.inspectedWindow.eval(`(() => {
       const events = window.${CONSOLE_BUFFER_NAME} || [];
@@ -61,7 +61,7 @@ export function startConsoleDrain({ chromeDevtools, state, transport, render }) 
       for (const event of events) {
         recordConsoleEvent(state, event);
 
-        transport.send(ENDPOINTS.errors, {
+        sendTelemetry(ENDPOINTS.errors, {
           type: "console.event",
           tabId: chromeDevtools.inspectedWindow.tabId,
           ...event,

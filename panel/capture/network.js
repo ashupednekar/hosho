@@ -6,14 +6,14 @@ const TELEMETRY_ENDPOINT_URLS = Object.values(ENDPOINTS).map(
   (path) => new URL(`${API_BASE}${path}`),
 );
 
-export function startNetworkCapture({ chromeDevtools, state, transport, render }) {
+export function startNetworkCapture({ chromeDevtools, state, sendTelemetry, render }) {
   chromeDevtools.network.onRequestFinished.addListener((entry) => {
     if (isTelemetryRequest(entry)) return;
 
     const trace = redactNetworkEntry(entry);
     recordTrace(state, entry);
 
-    transport.send(ENDPOINTS.traces, {
+    sendTelemetry(ENDPOINTS.traces, {
       type: "network.trace",
       capturedAt: new Date().toISOString(),
       tabId: chromeDevtools.inspectedWindow.tabId,

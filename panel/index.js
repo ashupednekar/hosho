@@ -1,35 +1,6 @@
-import { API_BASE, ENDPOINTS } from "./config.js";
-import { installConsoleCapture, startConsoleDrain } from "./capture/console.js";
-import { startNetworkCapture } from "./capture/network.js";
-import { createCaptureState } from "./state.js";
-import { createTransport, startMetricsFlush } from "./telemetry.js";
-import { createRenderer } from "./ui.js";
+import { startPanel } from "./app.js";
 
-const output = document.getElementById("output");
-const state = createCaptureState();
-const render = createRenderer(output, state);
-const transport = createTransport({ apiBase: API_BASE, render });
-
-installConsoleCapture(chrome.devtools);
-
-startNetworkCapture({
+startPanel({
   chromeDevtools: chrome.devtools,
-  state,
-  transport,
-  render,
+  output: document.getElementById("output"),
 });
-
-startConsoleDrain({
-  chromeDevtools: chrome.devtools,
-  state,
-  transport,
-  render,
-});
-
-startMetricsFlush({
-  chromeDevtools: chrome.devtools,
-  state,
-  transport,
-});
-
-render("ready", ENDPOINTS);
