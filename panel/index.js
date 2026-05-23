@@ -1,4 +1,4 @@
-import { API_BASE } from "./config.js";
+import { API_BASE, ENDPOINTS } from "./config.js";
 import { installConsoleCapture, startConsoleDrain } from "./capture/console.js";
 import { startNetworkCapture } from "./capture/network.js";
 import { createCaptureState } from "./state.js";
@@ -32,8 +32,4 @@ startMetricsFlush({
   transport,
 });
 
-render("ready", {
-  traces: "/api/traces",
-  errors: "/api/errors",
-  metrics: "/api/metrics",
-});
+render("ready", ENDPOINTS);

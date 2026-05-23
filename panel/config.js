@@ -1,9 +1,9 @@
 export const API_BASE = "https://your-api.example.com";
 
 export const ENDPOINTS = {
-  traces: "/api/traces",
-  errors: "/api/errors",
-  metrics: "/api/metrics",
+  traces: "/hosho/traces",
+  errors: "/hosho/errors",
+  metrics: "/hosho/metrics",
 };
 
 export const CONSOLE_BUFFER_NAME = "__hoshoConsoleEvents";
