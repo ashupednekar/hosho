@@ -1,0 +1,15 @@
+{
+  "name": "hosho",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "hosho_bg.wasm",
+    "hosho.js",
+    "hosho.d.ts"
+  ],
+  "main": "hosho.js",
+  "types": "hosho.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

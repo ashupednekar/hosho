@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Hosho",
+  "version": "1.0",
+  "description": "Open source observability capture for Chrome DevTools",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+  },
+  "devtools_page": "devtools.html",
+  "host_permissions": [
+    "https://your-api.example.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
