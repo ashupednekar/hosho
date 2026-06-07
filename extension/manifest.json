@@ -5,7 +5,8 @@
   "description": "Open source observability capture for Chrome DevTools",
   "devtools_page": "devtools.html",
   "host_permissions": [
-    "https://your-api.example.com/*"
+    "https://hosho-ingestor.ashupednekar49.workers.dev/*",
+    "http://localhost:8787/*"
   ],
   "action": {
     "default_popup": "popup.html"

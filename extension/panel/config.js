@@ -1,8 +1,9 @@
-export const API_BASE = "https://hosho-ingestor.ashupednekar49.workers.dev";
+//export const API_BASE = "https://hosho-ingestor.ashupednekar49.workers.dev";
+export const API_BASE = "http://localhost:8787";
 
 export const ENDPOINTS = {
   har: "/ingest/har",
-  log: "/ingest/log",
+  log: "/ingest/console",
 };
 
 export const CONSOLE_BUFFER_NAME = "__hoshoConsoleEvents";
