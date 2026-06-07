@@ -1,22 +1,18 @@
-import {
-  API_BASE,
-  ENDPOINTS,
-  METRICS_FLUSH_INTERVAL_MS,
-} from "./config.js";
+import { API_BASE, ENDPOINTS } from "./config.js";
 import { installConsoleCapture, startConsoleDrain } from "./capture/console.js";
 import { startNetworkCapture } from "./capture/network.js";
-import { createCaptureState, toMetricsPayload } from "./state.js";
 
 export function startPanel({ chromeDevtools, output }) {
-  const state = createCaptureState();
-  const render = createRender(output, state);
-  const sendTelemetry = async (path, payload) => {
+  const render = createRender(output);
+  const sendJson = async (path, payload) => {
     try {
+      render("sending", { path });
       await fetch(`${API_BASE}${path}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(payload),
       });
+      render("sent", { path });
     } catch (error) {
       render("send failed", {
         path,
@@ -29,41 +25,26 @@ export function startPanel({ chromeDevtools, output }) {
 
   startNetworkCapture({
     chromeDevtools,
-    state,
-    sendTelemetry,
+    sendJson,
     render,
   });
 
   startConsoleDrain({
     chromeDevtools,
-    state,
-    sendTelemetry,
+    sendJson,
     render,
   });
 
-  startMetricsFlush({
-    chromeDevtools,
-    state,
-    sendTelemetry,
+  render("ready", {
+    apiBase: API_BASE,
+    endpoints: ENDPOINTS,
   });
-
-  render("ready", ENDPOINTS);
 }
 
-function startMetricsFlush({ chromeDevtools, state, sendTelemetry }) {
-  setInterval(() => {
-    sendTelemetry(
-      ENDPOINTS.metrics,
-      toMetricsPayload(state, chromeDevtools.inspectedWindow.tabId),
-    );
-  }, METRICS_FLUSH_INTERVAL_MS);
-}
-
-function createRender(output, state) {
+function createRender(output) {
   return function render(kind, detail) {
     output.textContent = JSON.stringify({
       kind,
-      state,
       detail,
     }, null, 2);
   };

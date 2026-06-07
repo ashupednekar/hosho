@@ -4,7 +4,6 @@ import {
   CONSOLE_INSTALLED_FLAG,
   ENDPOINTS,
 } from "../config.js";
-import { recordConsoleEvent } from "../state.js";
 
 export function installConsoleCapture(chromeDevtools) {
   chromeDevtools.inspectedWindow.eval(`(() => {
@@ -31,7 +30,7 @@ export function installConsoleCapture(chromeDevtools) {
       });
     };
 
-    for (const level of ["warn", "error"]) {
+    for (const level of ["debug", "log", "info", "warn", "error"]) {
       const original = console[level];
       console[level] = function(...args) {
         push(level, args);
@@ -49,7 +48,7 @@ export function installConsoleCapture(chromeDevtools) {
   })()`);
 }
 
-export function startConsoleDrain({ chromeDevtools, state, sendTelemetry, render }) {
+export function startConsoleDrain({ chromeDevtools, sendJson, render }) {
   setInterval(() => {
     chromeDevtools.inspectedWindow.eval(`(() => {
       const events = window.${CONSOLE_BUFFER_NAME} || [];
@@ -59,10 +58,7 @@ export function startConsoleDrain({ chromeDevtools, state, sendTelemetry, render
       if (error || !Array.isArray(events) || events.length === 0) return;
 
       for (const event of events) {
-        recordConsoleEvent(state, event);
-
-        sendTelemetry(ENDPOINTS.errors, {
-          type: "console.event",
+        sendJson(ENDPOINTS.log, {
           tabId: chromeDevtools.inspectedWindow.tabId,
           ...event,
         });
