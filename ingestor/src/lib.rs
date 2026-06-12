@@ -4,6 +4,7 @@ use worker::*;
 mod handlers;
 mod internal;
 mod router;
+pub mod settings;
 
 #[event(fetch)]
 async fn fetch(
