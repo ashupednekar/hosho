@@ -2,6 +2,7 @@ use tower_service::Service;
 use worker::*;
 
 mod handlers;
+mod internal;
 mod router;
 
 #[event(fetch)]

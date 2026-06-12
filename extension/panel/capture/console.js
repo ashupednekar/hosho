@@ -59,8 +59,15 @@ export function startConsoleDrain({ chromeDevtools, sendJson, render }) {
 
       for (const event of events) {
         sendJson(ENDPOINTS.log, {
-          tabId: chromeDevtools.inspectedWindow.tabId,
-          ...event,
+          schema: "hosho.console.event.v1",
+          capture: {
+            tabId: chromeDevtools.inspectedWindow.tabId,
+            pageUrl: event.url,
+          },
+          event: {
+            tabId: chromeDevtools.inspectedWindow.tabId,
+            ...event,
+          },
         });
 
         render(event.level, event);
