@@ -8,16 +8,7 @@ export function startNetworkCapture({ chromeDevtools, sendJson, render }) {
   chromeDevtools.network.onRequestFinished.addListener((entry) => {
     if (isIngestRequest(entry)) return;
 
-    sendJson(ENDPOINTS.har, {
-      schema: "hosho.har.entry.v1",
-      capture: {
-        source: "chrome.devtools.network.onRequestFinished",
-        tabId: chromeDevtools.inspectedWindow.tabId,
-        pageUrl: entry.request?.url,
-        capturedAt: new Date().toISOString(),
-      },
-      entry: minimalHarEntry(entry),
-    });
+    sendJson(ENDPOINTS.har, minimalNetworkEvent(entry));
 
     render("trace", {
       method: entry.request?.method,
@@ -28,18 +19,12 @@ export function startNetworkCapture({ chromeDevtools, sendJson, render }) {
   });
 }
 
-function minimalHarEntry(entry) {
+function minimalNetworkEvent(entry) {
   return {
-    startedDateTime: entry.startedDateTime,
-    time: entry.time,
     request: minimalRequest(entry.request),
     response: minimalResponse(entry.response),
-    timings: entry.timings,
-    _requestId: entry._requestId,
-    _resourceType: entry._resourceType,
-    _priority: entry._priority,
-    _connectionId: entry._connectionId,
-    _initiator: minimalInitiator(entry._initiator),
+    timing: minimalTiming(entry),
+    trace: minimalTrace(entry),
   };
 }
 
@@ -63,18 +48,46 @@ function minimalResponse(response = {}) {
     headersSize: response.headersSize,
     bodySize: response.bodySize,
     content: response.content ? { mimeType: response.content.mimeType } : undefined,
-    _fromDiskCache: response._fromDiskCache,
-    _fromMemoryCache: response._fromMemoryCache,
   };
 }
 
-function minimalInitiator(initiator) {
-  if (!initiator) return undefined;
-  const frame = initiator.stack?.callFrames?.[0];
+function minimalTiming(entry) {
+  const timings = entry.timings || {};
   return {
-    type: initiator.type,
-    stack: frame ? { callFrames: [frame] } : undefined,
+    startedAt: entry.startedDateTime,
+    durationMs: nonNegativeNumber(entry.time),
+    blockedMs: nonNegativeNumber(timings.blocked),
+    dnsMs: nonNegativeNumber(timings.dns),
+    connectMs: nonNegativeNumber(timings.connect),
+    sslMs: nonNegativeNumber(timings.ssl),
+    sendMs: nonNegativeNumber(timings.send),
+    waitMs: nonNegativeNumber(timings.wait),
+    receiveMs: nonNegativeNumber(timings.receive),
   };
+}
+
+function minimalTrace(entry) {
+  const frame = entry._initiator?.stack?.callFrames?.[0];
+  return {
+    traceparent: headerValue(entry.request?.headers, "traceparent"),
+    trigger: frame
+      ? {
+          functionName: frame.functionName,
+          url: frame.url,
+          lineNumber: frame.lineNumber,
+          columnNumber: frame.columnNumber,
+        }
+      : undefined,
+  };
+}
+
+function headerValue(headers = [], name) {
+  return headers.find((header) => header.name?.toLowerCase() === name)?.value;
+}
+
+function nonNegativeNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : undefined;
 }
 
 function isIngestRequest(entry) {
