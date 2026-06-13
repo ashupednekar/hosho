@@ -1,6 +1,6 @@
 use super::{
     config::OtlpSignal,
-    payload::{ExportRequest, TelemetryBatch},
+    {ExportRequest, TelemetryBatch},
 };
 
 pub(crate) trait ExportStrategy {

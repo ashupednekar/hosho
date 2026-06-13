@@ -1,8 +1,3 @@
-pub const OTEL_COLLECTOR_ENDPOINT: &str = "http://localhost:4318";
-pub const SERVICE_NAME: &str = "hosho-browser";
-pub const SERVICE_NAMESPACE: &str = "hosho";
-pub const SCOPE_VERSION: &str = env!("CARGO_PKG_VERSION");
-
 #[derive(Clone, Copy)]
 pub enum OtlpSignal {
     Traces,

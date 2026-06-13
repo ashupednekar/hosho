@@ -1,15 +1,15 @@
+use super::strategy::{ExportStrategy, OtlpCollectorStrategy};
+use crate::{
+    internal::telemetry::{ExportRequest, TelemetryBatch},
+    prelude::Result,
+    settings::settings,
+};
+use axum::http::StatusCode;
+use standard_error::{Interpolate, StandardError, Status};
 use worker::{Fetch, Headers, Method, Request, RequestInit};
 
-use crate::prelude::{IngestError, Result};
-
-use super::{
-    config::OTEL_COLLECTOR_ENDPOINT,
-    payload::{ExportRequest, TelemetryBatch},
-    strategy::{ExportStrategy, OtlpCollectorStrategy},
-};
-
 pub async fn export(batch: TelemetryBatch) -> Result<()> {
-    OtlpHttpExporter::new(OTEL_COLLECTOR_ENDPOINT)
+    OtlpHttpExporter::new(&settings.otel_collector_endpoint)
         .export(batch, &OtlpCollectorStrategy)
         .await
 }
@@ -32,19 +32,16 @@ impl OtlpHttpExporter {
 
     async fn send(&self, request: ExportRequest) -> Result<()> {
         let body = serde_json::to_string(&request.body)
-            .map_err(|error| export_error("ERR-OTEL-001", error.to_string()))?;
+            .map_err(|error| StandardError::new("ERR-OTEL-001").code(StatusCode::BAD_REQUEST))?;
         let response = Fetch::Request(self.request(request.signal.path(), body)?)
             .send()
             .await
-            .map_err(|error| export_error("ERR-OTEL-002", error.to_string()))?;
+            .map_err(|error| StandardError::new("ERR-OTEL-002").code(StatusCode::BAD_REQUEST))?;
 
         if (200..300).contains(&response.status_code()) {
             Ok(())
         } else {
-            Err(export_error(
-                "ERR-OTEL-003",
-                format!("OTLP collector returned {}", response.status_code()),
-            ))
+            Err(StandardError::new("ERR-OTEL-003"))
         }
     }
 
@@ -52,7 +49,9 @@ impl OtlpHttpExporter {
         let headers = Headers::new();
         headers
             .set("content-type", "application/json")
-            .map_err(|error| export_error("ERR-OTEL-002", error.to_string()))?;
+            .map_err(|error| {
+                StandardError::new("ERR-OTEL-002").interpolate_err(error.to_string())
+            })?;
 
         let mut init = RequestInit::new();
         init.with_method(Method::Post)
@@ -60,6 +59,6 @@ impl OtlpHttpExporter {
             .with_body(Some(worker::wasm_bindgen::JsValue::from_str(&body)));
 
         Request::new_with_init(&format!("{}{}", self.endpoint, path), &init)
-            .map_err(|error| export_error("ERR-OTEL-002", error.to_string()))
+            .map_err(|error| StandardError::new("ERR-OTEL-002").interpolate_err(error.to_string()))
     }
 }

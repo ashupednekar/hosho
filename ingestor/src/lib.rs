@@ -4,6 +4,7 @@ use worker::*;
 mod handlers;
 mod internal;
 pub mod prelude;
+pub mod settings;
 mod router;
 
 #[event(fetch)]

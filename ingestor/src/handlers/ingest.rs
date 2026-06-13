@@ -4,13 +4,13 @@ use serde_json::{json, Value};
 use crate::{
     internal::{
         specs::{capture::ConsoleRecord, network::NetworkRequest},
-        telemetry,
+        telemetry, 
     },
-    prelude::HttpResult,
+    prelude::Result,
 };
 
 #[worker::send]
-pub async fn ingest_har(Json(payload): Json<Value>) -> HttpResult<Json<Value>> {
+pub async fn ingest_har(Json(payload): Json<Value>) -> Result<Json<Value>> {
     let records = vec![NetworkRequest::from(
         crate::internal::specs::capture::HarRecord::try_from(payload)?,
     )];
@@ -22,7 +22,7 @@ pub async fn ingest_har(Json(payload): Json<Value>) -> HttpResult<Json<Value>> {
 }
 
 #[worker::send]
-pub async fn ingest_console(Json(payload): Json<Value>) -> HttpResult<Json<Value>> {
+pub async fn ingest_console(Json(payload): Json<Value>) -> Result<Json<Value>> {
     let records = vec![ConsoleRecord::try_from(payload)?];
     let count = records.len();
     telemetry::export_console(&records).await?;
