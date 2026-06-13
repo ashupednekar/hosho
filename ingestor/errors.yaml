@@ -3,3 +3,7 @@ errors:
     detail_en_US: "unsupported console payload"
   - code: ERR-CAPTURE-002
     detail_en_US: "invalid request/response/timing payload: [err]"
+  - code: ERR-OTEL-001
+    detail_en_US: "request body not a valid json"
+  - code: ERR-OTEL-002
+    detail_en_US: "error exporting request: [err]"
