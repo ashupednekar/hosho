@@ -1,8 +1,10 @@
+use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use standard_error::{Interpolate, StandardError, Status};
 
 use super::{network::TraceContext, timing::RequestTiming};
-use crate::prelude::{IngestError, Result};
+use crate::prelude::Result;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -15,14 +17,11 @@ pub struct ConsoleRecord {
 }
 
 impl TryFrom<Value> for ConsoleRecord {
-    type Error = IngestError;
+    type Error = StandardError;
 
     fn try_from(event: Value) -> Result<Self> {
         if event.get("level").is_none() {
-            return Err(IngestError::bad_request(
-                "ERR-CAPTURE-001",
-                "unsupported console payload",
-            ));
+            return Err(StandardError::new("ERR-CAPTURE-001").code(StatusCode::BAD_REQUEST));
         }
 
         let args = event
@@ -37,7 +36,15 @@ impl TryFrom<Value> for ConsoleRecord {
                 .and_then(Value::as_str)
                 .unwrap_or("log")
                 .to_string(),
-            body: console_body(&args),
+            body: args
+                .iter()
+                .map(|arg| {
+                    arg.as_str()
+                        .map(str::to_string)
+                        .unwrap_or_else(|| arg.to_string())
+                })
+                .collect::<Vec<_>>()
+                .join(" "),
             args,
             url: event.get("url").and_then(Value::as_str).map(str::to_string),
             captured_at: event
@@ -59,14 +66,13 @@ pub struct HarRecord {
 }
 
 impl TryFrom<Value> for HarRecord {
-    type Error = IngestError;
+    type Error = StandardError;
 
     fn try_from(payload: Value) -> Result<Self> {
         serde_json::from_value(payload).map_err(|e| {
-            IngestError::bad_request(
-                "ERR-CAPTURE-002",
-                format!("invalid request/response/timing payload: {e}"),
-            )
+            StandardError::new("ERR-CAPTURE-002")
+                .code(StatusCode::BAD_REQUEST)
+                .interpolate_err(e.to_string())
         })
     }
 }
@@ -108,15 +114,4 @@ pub struct HarHeader {
 #[serde(rename_all = "camelCase")]
 pub struct HarContent {
     pub mime_type: Option<String>,
-}
-
-fn console_body(args: &[Value]) -> String {
-    args.iter()
-        .map(|arg| {
-            arg.as_str()
-                .map(str::to_string)
-                .unwrap_or_else(|| arg.to_string())
-        })
-        .collect::<Vec<_>>()
-        .join(" ")
 }

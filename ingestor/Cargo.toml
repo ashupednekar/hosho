@@ -20,3 +20,6 @@ opentelemetry = { version = "0.32.0", default-features = false }
 opentelemetry_sdk = { version = "0.32.1", default-features = false }
 sha2 = "0.10.9"
 url = "2.5.8"
+standard-error = "0.1.9"
+config = "0.15.23"
+lazy_static = "1.5.0"
