@@ -5,7 +5,6 @@ mod handlers;
 mod internal;
 pub mod prelude;
 mod router;
-pub mod settings;
 
 #[event(fetch)]
 async fn fetch(

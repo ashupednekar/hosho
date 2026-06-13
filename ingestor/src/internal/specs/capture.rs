@@ -1,10 +1,8 @@
-use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::{network::TraceContext, timing::RequestTiming};
-use crate::prelude::{Result};
-use standard_error::{Interpolate, StandardError, Status};
+use crate::prelude::{IngestError, Result};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -17,11 +15,14 @@ pub struct ConsoleRecord {
 }
 
 impl TryFrom<Value> for ConsoleRecord {
-    type Error = StandardError;
+    type Error = IngestError;
 
     fn try_from(event: Value) -> Result<Self> {
         if event.get("level").is_none() {
-            return Err(StandardError::new("ERR-CAPTURE-001").code(StatusCode::BAD_REQUEST)); //unsupported console payload
+            return Err(IngestError::bad_request(
+                "ERR-CAPTURE-001",
+                "unsupported console payload",
+            ));
         }
 
         let args = event
@@ -58,15 +59,15 @@ pub struct HarRecord {
 }
 
 impl TryFrom<Value> for HarRecord {
-    type Error = StandardError;
+    type Error = IngestError;
 
     fn try_from(payload: Value) -> Result<Self> {
-        serde_json::from_value(payload)
-            .map_err(|e| {
-                StandardError::new("ERR-CAPTURE-002")
-                    .code(StatusCode::BAD_REQUEST)
-                    .interpolate_err(e.to_string()
-            )}) //invalid json
+        serde_json::from_value(payload).map_err(|e| {
+            IngestError::bad_request(
+                "ERR-CAPTURE-002",
+                format!("invalid request/response/timing payload: {e}"),
+            )
+        })
     }
 }
 

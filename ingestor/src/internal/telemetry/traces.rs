@@ -55,10 +55,7 @@ fn base_attrs(record: &NetworkRequest) -> Vec<KeyValue> {
             "http.request.method",
             record.request.method.clone(),
         )),
-        Some(KeyValue::new(
-            "url.full",
-            record.request.url_sanitized.clone(),
-        )),
+        Some(KeyValue::new("url.full", record.request.url.clone())),
         string_attr("url.scheme", &record.request.scheme),
         string_attr("server.address", &record.request.host),
         record

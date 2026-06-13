@@ -17,7 +17,7 @@ use crate::{
     prelude::Result,
 };
 
-pub async fn export_har(records: &[NetworkRequest]) -> IngestResult<()> {
+pub async fn export_har(records: &[NetworkRequest]) -> Result<()> {
     exporter::export(payload::TelemetryBatch {
         traces: traces::har_traces(records),
         logs: None,
@@ -26,7 +26,7 @@ pub async fn export_har(records: &[NetworkRequest]) -> IngestResult<()> {
     .await
 }
 
-pub async fn export_console(records: &[ConsoleRecord]) -> IngestResult<()> {
+pub async fn export_console(records: &[ConsoleRecord]) -> Result<()> {
     exporter::export(payload::TelemetryBatch {
         traces: None,
         logs: logs::console_logs(records),

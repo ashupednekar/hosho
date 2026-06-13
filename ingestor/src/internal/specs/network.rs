@@ -5,7 +5,7 @@ use sha2::{Digest, Sha256};
 use url::Url;
 
 use super::{
-    capture::{HarHeader, HarPayload, HarRequest, HarResponse},
+    capture::{HarHeader, HarRecord, HarRequest, HarResponse},
     timing::RequestTiming,
 };
 
@@ -17,15 +17,6 @@ const SENSITIVE_HEADERS: &[&str] = &[
     "proxy-authorization",
     "set-cookie",
 ];
-const SENSITIVE_QUERY_KEYS: &[&str] = &[
-    "access_token",
-    "auth",
-    "code",
-    "id_token",
-    "password",
-    "token",
-];
-
 pub type HeaderMap = BTreeMap<String, Vec<String>>;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -38,8 +29,8 @@ pub struct NetworkRequest {
     pub trace: TraceContext,
 }
 
-impl From<HarPayload> for NetworkRequest {
-    fn from(payload: HarPayload) -> Self {
+impl From<HarRecord> for NetworkRequest {
+    fn from(payload: HarRecord) -> Self {
         let request = HttpRequestSpec::from(&payload.request);
 
         Self {
@@ -80,7 +71,6 @@ impl RequestIdentity {
 pub struct HttpRequestSpec {
     pub method: String,
     pub url: String,
-    pub url_sanitized: String,
     pub scheme: Option<String>,
     pub host: Option<String>,
     pub port: Option<u16>,
@@ -93,12 +83,11 @@ pub struct HttpRequestSpec {
 impl From<&HarRequest> for HttpRequestSpec {
     fn from(request: &HarRequest) -> Self {
         let url = request.url.as_deref().unwrap_or_default();
-        let parts = SanitizedUrl::from(url);
+        let parts = UrlParts::from(url);
 
         Self {
             method: request.method.as_deref().unwrap_or("_OTHER").to_string(),
             url: url.to_string(),
-            url_sanitized: parts.sanitized,
             scheme: parts.scheme,
             host: parts.host,
             port: parts.port,
@@ -195,25 +184,19 @@ impl HeaderMapExt for HeaderMap {
     }
 }
 
-struct SanitizedUrl {
-    sanitized: String,
+struct UrlParts {
     scheme: Option<String>,
     host: Option<String>,
     port: Option<u16>,
 }
 
-impl From<&str> for SanitizedUrl {
+impl From<&str> for UrlParts {
     fn from(raw: &str) -> Self {
-        let Ok(mut url) = Url::parse(raw) else {
-            return Self::from_raw(raw);
+        let Ok(url) = Url::parse(raw) else {
+            return Self::default();
         };
 
-        let _ = url.set_username("");
-        let _ = url.set_password(None);
-        redact_query(&mut url);
-
         Self {
-            sanitized: url.to_string(),
             scheme: Some(url.scheme().to_string()),
             host: url.host_str().map(str::to_string),
             port: url.port_or_known_default(),
@@ -221,10 +204,9 @@ impl From<&str> for SanitizedUrl {
     }
 }
 
-impl SanitizedUrl {
-    fn from_raw(raw: &str) -> Self {
+impl Default for UrlParts {
+    fn default() -> Self {
         Self {
-            sanitized: raw.to_string(),
             scheme: None,
             host: None,
             port: None,
@@ -241,20 +223,4 @@ fn insert_header(headers: &mut HeaderMap, name: &str, value: &str) {
 
 fn non_negative_i64(value: Option<i64>) -> Option<i64> {
     value.filter(|number| *number >= 0)
-}
-
-fn redact_query(url: &mut Url) {
-    let pairs: Vec<(String, String)> = url
-        .query_pairs()
-        .map(|(key, value)| {
-            let value = if SENSITIVE_QUERY_KEYS.contains(&key.as_ref()) {
-                "REDACTED".into()
-            } else {
-                value
-            };
-            (key.into_owned(), value.into_owned())
-        })
-        .collect();
-
-    url.query_pairs_mut().clear().extend_pairs(pairs);
 }

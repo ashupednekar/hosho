@@ -1,4 +1,4 @@
-use axum::{http::StatusCode, response::IntoResponse, Json};
+use axum::Json;
 use serde_json::{json, Value};
 
 use crate::{
@@ -6,11 +6,11 @@ use crate::{
         specs::{capture::ConsoleRecord, network::NetworkRequest},
         telemetry,
     },
-    prelude::Result,
+    prelude::HttpResult,
 };
 
 #[worker::send]
-pub async fn ingest_har(Json(payload): Json<Value>) -> Result<Json<Value>> {
+pub async fn ingest_har(Json(payload): Json<Value>) -> HttpResult<Json<Value>> {
     let records = vec![NetworkRequest::from(
         crate::internal::specs::capture::HarRecord::try_from(payload)?,
     )];
@@ -22,7 +22,7 @@ pub async fn ingest_har(Json(payload): Json<Value>) -> Result<Json<Value>> {
 }
 
 #[worker::send]
-pub async fn ingest_console(Json(payload): Json<Value>) -> Result<Json<Value>> {
+pub async fn ingest_console(Json(payload): Json<Value>) -> HttpResult<Json<Value>> {
     let records = vec![ConsoleRecord::try_from(payload)?];
     let count = records.len();
     telemetry::export_console(&records).await?;
