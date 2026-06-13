@@ -1,3 +1,4 @@
+use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -14,21 +15,21 @@ pub struct RequestTiming {
     pub receive_ms: Option<f64>,
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BrowserContext {
-    pub resource_type: Option<String>,
-    pub priority: Option<String>,
-    pub connection_id: Option<String>,
-    pub initiator: Option<InitiatorContext>,
+impl RequestTiming {
+    pub fn start_unix_nano(&self) -> Option<u64> {
+        unix_nano(self.started_at.as_deref())
+    }
+
+    pub fn end_unix_nano(&self) -> Option<u64> {
+        let duration_ns = (self.duration_ms? * 1_000_000.0).round();
+        self.start_unix_nano()?
+            .checked_add(duration_ns.max(0.0) as u64)
+    }
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct InitiatorContext {
-    pub top_function: Option<String>,
-    pub top_url: Option<String>,
-    pub top_line: Option<i64>,
-    pub top_column: Option<i64>,
-    pub stack_depth: Option<usize>,
+pub fn unix_nano(timestamp: Option<&str>) -> Option<u64> {
+    let parsed = DateTime::<FixedOffset>::parse_from_rfc3339(timestamp?).ok()?;
+    parsed
+        .timestamp_nanos_opt()
+        .and_then(|ns| u64::try_from(ns).ok())
 }

@@ -1,11 +1,9 @@
-use crate::internal::{
-    normalize::time::unix_nano,
-    specs::{
-        console::ConsoleRecord,
-        metrics::{MetricKind, MetricPoint, MetricValue},
-        telemetry::{TelemetryAttribute, TelemetryValue},
-    },
+use crate::internal::specs::{
+    capture::ConsoleRecord,
+    metrics::{MetricKind, MetricPoint, MetricValue},
+    timing::unix_nano,
 };
+use opentelemetry::KeyValue;
 
 pub fn metrics_for_console(records: &[ConsoleRecord]) -> Vec<MetricPoint> {
     records.iter().map(log_count).collect()
@@ -18,10 +16,7 @@ fn log_count(record: &ConsoleRecord) -> MetricPoint {
         unit: "1",
         kind: MetricKind::Counter,
         value: MetricValue::Int(1),
-        attributes: vec![TelemetryAttribute::new(
-            "log.severity",
-            TelemetryValue::String(record.level.clone()),
-        )],
+        attributes: vec![KeyValue::new("log.severity", record.level.clone())],
         time_unix_nano: unix_nano(record.captured_at.as_deref()),
     }
 }

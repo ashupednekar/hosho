@@ -1,11 +1,8 @@
-use crate::internal::{
-    normalize::time::unix_nano,
-    specs::{
-        metrics::{MetricKind, MetricPoint, MetricValue},
-        network::NetworkRequest,
-        telemetry::{TelemetryAttribute, TelemetryValue},
-    },
+use crate::internal::specs::{
+    metrics::{MetricKind, MetricPoint, MetricValue},
+    network::NetworkRequest,
 };
+use opentelemetry::KeyValue;
 
 pub fn metrics_for_har(records: &[NetworkRequest]) -> Vec<MetricPoint> {
     records.iter().flat_map(metrics_for_record).collect()
@@ -23,7 +20,7 @@ fn request_count(record: &NetworkRequest) -> MetricPoint {
         kind: MetricKind::Counter,
         value: MetricValue::Int(1),
         attributes: request_attrs(record),
-        time_unix_nano: unix_nano(record.timing.started_at.as_deref()),
+        time_unix_nano: record.timing.start_unix_nano(),
     }
 }
 
@@ -35,19 +32,16 @@ fn request_duration(record: &NetworkRequest) -> MetricPoint {
         kind: MetricKind::Gauge,
         value: MetricValue::Double(record.timing.duration_ms.unwrap_or_default()),
         attributes: request_attrs(record),
-        time_unix_nano: unix_nano(record.timing.started_at.as_deref()),
+        time_unix_nano: record.timing.start_unix_nano(),
     }
 }
 
-fn request_attrs(record: &NetworkRequest) -> Vec<TelemetryAttribute> {
+fn request_attrs(record: &NetworkRequest) -> Vec<KeyValue> {
     vec![
-        TelemetryAttribute::new(
-            "http.request.method",
-            TelemetryValue::String(record.request.method.clone()),
-        ),
-        TelemetryAttribute::new(
+        KeyValue::new("http.request.method", record.request.method.clone()),
+        KeyValue::new(
             "http.response.status_code",
-            TelemetryValue::Int(record.response.status.unwrap_or_default()),
+            record.response.status.unwrap_or_default(),
         ),
     ]
 }

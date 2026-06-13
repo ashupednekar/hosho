@@ -3,7 +3,10 @@ use lazy_static::lazy_static;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
-struct Settings {}
+pub struct Settings {
+    pub otel_host: String,
+    pub otel_port: i32,
+}
 
 impl Settings {
     fn new() -> Result<Self, ConfigError> {

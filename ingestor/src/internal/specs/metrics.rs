@@ -1,25 +1,23 @@
-use serde::{Deserialize, Serialize};
+use opentelemetry::KeyValue;
 
-use super::telemetry::TelemetryAttribute;
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub struct MetricPoint {
     pub name: &'static str,
     pub description: &'static str,
     pub unit: &'static str,
     pub kind: MetricKind,
     pub value: MetricValue,
-    pub attributes: Vec<TelemetryAttribute>,
+    pub attributes: Vec<KeyValue>,
     pub time_unix_nano: Option<u64>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub enum MetricKind {
     Counter,
     Gauge,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub enum MetricValue {
     Int(i64),
     Double(f64),

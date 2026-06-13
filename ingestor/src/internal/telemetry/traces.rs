@@ -1,18 +1,10 @@
 use serde_json::{json, Value};
 
-use crate::internal::{
-    normalize::{
-        headers::allowed_header_attributes,
-        time::{end_unix_nano, unix_nano},
-    },
-    specs::{
-        network::NetworkRequest,
-        telemetry::{TelemetryAttribute, TelemetryValue},
-    },
-};
+use crate::internal::specs::network::{allowed_header_attributes, NetworkRequest};
+use opentelemetry::KeyValue;
 
 use super::{
-    attributes::{double_attr, int_attr, otlp_attributes, string_attr},
+    attributes::{double_attr, int_attr, otlp_attributes, string_array_attr, string_attr},
     config::SCOPE_VERSION,
     ids::ids_for_request,
     resource::resource_attributes,
@@ -21,7 +13,7 @@ use super::{
 pub fn har_traces(records: &[NetworkRequest]) -> Option<Value> {
     (!records.is_empty()).then(|| {
         json!({"resourceSpans": [{
-            "resource": {"attributes": otlp_attributes(&resource_attributes(records.first().and_then(|r| r.capture.session_id.as_deref())))},
+            "resource": {"attributes": otlp_attributes(&resource_attributes(None))},
             "scopeSpans": [{"scope": {"name": "hosho.har", "version": SCOPE_VERSION}, "spans": spans(records)}]
         }]})
     })
@@ -33,8 +25,8 @@ fn spans(records: &[NetworkRequest]) -> Vec<Value> {
 
 fn span_for_request(record: &NetworkRequest) -> Value {
     let ids = ids_for_request(record);
-    let start = unix_nano(record.timing.started_at.as_deref());
-    let end = end_unix_nano(start, record.timing.duration_ms);
+    let start = record.timing.start_unix_nano();
+    let end = record.timing.end_unix_nano();
 
     json!({
         "traceId": ids.trace_id,
@@ -48,42 +40,39 @@ fn span_for_request(record: &NetworkRequest) -> Value {
     })
 }
 
-fn span_attrs(record: &NetworkRequest) -> Vec<TelemetryAttribute> {
+fn span_attrs(record: &NetworkRequest) -> Vec<KeyValue> {
     let mut attrs = base_attrs(record);
     attrs.extend(timing_attrs(record));
     attrs.extend(header_attrs(record));
+    attrs.extend(trigger_attrs(record));
     attrs
 }
 
-fn base_attrs(record: &NetworkRequest) -> Vec<TelemetryAttribute> {
+fn base_attrs(record: &NetworkRequest) -> Vec<KeyValue> {
     [
-        Some(TelemetryAttribute::new(
-            "hosho.schema",
-            TelemetryValue::String(record.schema.clone()),
-        )),
-        Some(TelemetryAttribute::new(
+        Some(KeyValue::new("hosho.schema", record.schema.clone())),
+        Some(KeyValue::new(
             "http.request.method",
-            TelemetryValue::String(record.request.method.clone()),
+            record.request.method.clone(),
         )),
-        Some(TelemetryAttribute::new(
+        Some(KeyValue::new(
             "url.full",
-            TelemetryValue::String(record.request.url_sanitized.clone()),
+            record.request.url_sanitized.clone(),
         )),
         string_attr("url.scheme", &record.request.scheme),
         string_attr("server.address", &record.request.host),
-        record.request.port.map(|port| {
-            TelemetryAttribute::new("server.port", TelemetryValue::Int(i64::from(port)))
-        }),
+        record
+            .request
+            .port
+            .map(|port| KeyValue::new("server.port", i64::from(port))),
         int_attr("http.response.status_code", record.response.status),
-        string_attr("hosho.capture.session_id", &record.capture.session_id),
-        string_attr("hosho.capture.page_id", &record.capture.page_id),
-        Some(TelemetryAttribute::new(
+        Some(KeyValue::new(
             "hosho.har.entry_hash",
-            TelemetryValue::String(record.identity.entry_hash.clone()),
+            record.identity.entry_hash.clone(),
         )),
-        Some(TelemetryAttribute::new(
+        Some(KeyValue::new(
             "hosho.har.dedupe_key",
-            TelemetryValue::String(record.identity.dedupe_key.clone()),
+            record.identity.dedupe_key.clone(),
         )),
     ]
     .into_iter()
@@ -91,7 +80,7 @@ fn base_attrs(record: &NetworkRequest) -> Vec<TelemetryAttribute> {
     .collect()
 }
 
-fn timing_attrs(record: &NetworkRequest) -> Vec<TelemetryAttribute> {
+fn timing_attrs(record: &NetworkRequest) -> Vec<KeyValue> {
     [
         double_attr("hosho.har.timing.blocked_ms", record.timing.blocked_ms),
         double_attr("hosho.har.timing.dns_ms", record.timing.dns_ms),
@@ -106,15 +95,31 @@ fn timing_attrs(record: &NetworkRequest) -> Vec<TelemetryAttribute> {
     .collect()
 }
 
-fn header_attrs(record: &NetworkRequest) -> Vec<TelemetryAttribute> {
+fn header_attrs(record: &NetworkRequest) -> Vec<KeyValue> {
     allowed_header_attributes("http.request.header", &record.request.headers)
         .into_iter()
         .chain(allowed_header_attributes(
             "http.response.header",
             &record.response.headers,
         ))
-        .map(|(key, values)| TelemetryAttribute::new(key, TelemetryValue::StringArray(values)))
+        .map(|(key, values)| string_array_attr(key, values))
         .collect()
+}
+
+fn trigger_attrs(record: &NetworkRequest) -> Vec<KeyValue> {
+    let Some(trigger) = record.trace.trigger.as_ref() else {
+        return Vec::new();
+    };
+
+    [
+        string_attr("code.function", &trigger.function_name),
+        string_attr("code.file.path", &trigger.url),
+        int_attr("code.line.number", trigger.line_number),
+        int_attr("code.column.number", trigger.column_number),
+    ]
+    .into_iter()
+    .flatten()
+    .collect()
 }
 
 fn span_status(record: &NetworkRequest) -> Value {

@@ -9,10 +9,12 @@ mod resource;
 mod strategy;
 mod traces;
 
-use crate::internal::{
-    error::IngestResult,
-    metrics::{console::metrics_for_console, har::metrics_for_har},
-    specs::{console::ConsoleRecord, network::NetworkRequest},
+use crate::{
+    internal::{
+        metrics::{console::metrics_for_console, har::metrics_for_har},
+        specs::{capture::ConsoleRecord, network::NetworkRequest},
+    },
+    prelude::Result,
 };
 
 pub async fn export_har(records: &[NetworkRequest]) -> IngestResult<()> {

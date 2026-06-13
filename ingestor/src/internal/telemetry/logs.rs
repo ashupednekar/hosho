@@ -1,19 +1,14 @@
 use serde_json::{json, Value};
 
-use crate::internal::{
-    normalize::time::unix_nano,
-    specs::{
-        console::ConsoleRecord,
-        telemetry::{TelemetryAttribute, TelemetryValue},
-    },
-};
+use crate::internal::specs::{capture::ConsoleRecord, timing::unix_nano};
+use opentelemetry::KeyValue;
 
 use super::{attributes::otlp_attributes, config::SCOPE_VERSION, resource::resource_attributes};
 
 pub fn console_logs(records: &[ConsoleRecord]) -> Option<Value> {
     (!records.is_empty()).then(|| {
         json!({"resourceLogs": [{
-            "resource": {"attributes": otlp_attributes(&resource_attributes(records.first().and_then(|r| r.capture.session_id.as_deref())))},
+            "resource": {"attributes": otlp_attributes(&resource_attributes(None))},
             "scopeLogs": [{"scope": {"name": "hosho.console", "version": SCOPE_VERSION}, "logRecords": log_records(records)}]
         }]})
     })
@@ -33,25 +28,13 @@ fn log_record(record: &ConsoleRecord) -> Value {
     })
 }
 
-fn log_attrs(record: &ConsoleRecord) -> Vec<TelemetryAttribute> {
+fn log_attrs(record: &ConsoleRecord) -> Vec<KeyValue> {
     [
-        Some(TelemetryAttribute::new(
-            "hosho.schema",
-            TelemetryValue::String("hosho.console.record.v1".to_string()),
-        )),
+        Some(KeyValue::new("hosho.schema", "hosho.console.record.v1")),
         record
             .url
             .as_ref()
-            .map(|url| TelemetryAttribute::new("url.full", TelemetryValue::String(url.clone()))),
-        record.tab_id.map(|tab_id| {
-            TelemetryAttribute::new("hosho.browser.tab_id", TelemetryValue::Int(tab_id))
-        }),
-        record.capture.page_id.as_ref().map(|page_id| {
-            TelemetryAttribute::new(
-                "hosho.capture.page_id",
-                TelemetryValue::String(page_id.clone()),
-            )
-        }),
+            .map(|url| KeyValue::new("url.full", url.clone())),
     ]
     .into_iter()
     .flatten()

@@ -1,4 +1,4 @@
-use crate::internal::{normalize::identity::hash_parts, specs::network::NetworkRequest};
+use crate::internal::specs::network::{hash_parts, NetworkRequest};
 
 pub struct SpanIds {
     pub trace_id: String,
@@ -21,7 +21,11 @@ pub fn ids_for_request(record: &NetworkRequest) -> SpanIds {
 }
 
 fn traceparent_ids(record: &NetworkRequest) -> Option<(String, String)> {
-    let header = record.request.headers.get("traceparent")?.first()?;
+    let header = record
+        .trace
+        .traceparent
+        .as_ref()
+        .or_else(|| record.request.headers.get("traceparent")?.first())?;
     let parts: Vec<&str> = header.split('-').collect();
     let valid = parts.len() == 4 && parts[1].len() == 32 && parts[2].len() == 16;
     valid.then(|| (parts[1].to_string(), parts[2].to_string()))
@@ -29,8 +33,7 @@ fn traceparent_ids(record: &NetworkRequest) -> Option<(String, String)> {
 
 fn trace_parts(record: &NetworkRequest) -> Vec<&str> {
     vec![
-        record.capture.session_id.as_deref().unwrap_or_default(),
-        record.capture.page_id.as_deref().unwrap_or_default(),
+        record.request.url.as_str(),
         record.request.host.as_deref().unwrap_or_default(),
         record.timing.started_at.as_deref().unwrap_or_default(),
     ]
