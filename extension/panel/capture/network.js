@@ -1,4 +1,5 @@
 import { API_BASE, ENDPOINTS } from "../config.js";
+import { sanitizedUrl } from "./url.js";
 
 const INGEST_ENDPOINT_URLS = Object.values(ENDPOINTS).map(
   (path) => new URL(`${API_BASE}${path}`),
@@ -12,7 +13,7 @@ export function startNetworkCapture({ chromeDevtools, sendJson, render }) {
 
     render("trace", {
       method: entry.request?.method,
-      url: entry.request?.url,
+      url: sanitizedUrl(entry.request?.url),
       status: entry.response?.status,
       ms: Number(entry.time) || 0,
     });
@@ -31,7 +32,7 @@ function minimalNetworkEvent(entry) {
 function minimalRequest(request = {}) {
   return {
     method: request.method,
-    url: request.url,
+    url: sanitizedUrl(request.url),
     httpVersion: request.httpVersion,
     headers: request.headers,
     headersSize: request.headersSize,
@@ -73,7 +74,7 @@ function minimalTrace(entry) {
     trigger: frame
       ? {
           functionName: frame.functionName,
-          url: frame.url,
+          url: sanitizedUrl(frame.url),
           lineNumber: frame.lineNumber,
           columnNumber: frame.columnNumber,
         }

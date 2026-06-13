@@ -4,6 +4,7 @@ import {
   CONSOLE_INSTALLED_FLAG,
   ENDPOINTS,
 } from "../config.js";
+import { sanitizedUrl } from "./url.js";
 
 export function installConsoleCapture(chromeDevtools) {
   chromeDevtools.inspectedWindow.eval(`(() => {
@@ -58,10 +59,18 @@ export function startConsoleDrain({ chromeDevtools, sendJson, render }) {
       if (error || !Array.isArray(events) || events.length === 0) return;
 
       for (const event of events) {
-        sendJson(ENDPOINTS.log, event);
+        const sanitizedEvent = sanitizeConsoleEvent(event);
+        sendJson(ENDPOINTS.log, sanitizedEvent);
 
-        render(event.level, event);
+        render(sanitizedEvent.level, sanitizedEvent);
       }
     });
   }, CONSOLE_DRAIN_INTERVAL_MS);
+}
+
+function sanitizeConsoleEvent(event) {
+  return {
+    ...event,
+    url: sanitizedUrl(event.url),
+  };
 }
