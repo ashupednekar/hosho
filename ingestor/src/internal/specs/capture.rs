@@ -87,6 +87,7 @@ pub struct HarRequest {
     pub headers: Vec<HarHeader>,
     pub headers_size: Option<i64>,
     pub body_size: Option<i64>,
+    pub post_data: Option<HarPostData>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -114,4 +115,13 @@ pub struct HarHeader {
 #[serde(rename_all = "camelCase")]
 pub struct HarContent {
     pub mime_type: Option<String>,
+    pub text: Option<String>,
+    pub encoding: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HarPostData {
+    pub mime_type: Option<String>,
+    pub text: Option<String>,
 }

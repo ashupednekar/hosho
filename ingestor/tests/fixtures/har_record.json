@@ -1,0 +1,60 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "https://api.example.com/upload?token=REDACTED",
+    "httpVersion": "HTTP/2",
+    "headers": [
+      {
+        "name": "content-type",
+        "value": "application/octet-stream"
+      },
+      {
+        "name": "traceparent",
+        "value": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+      }
+    ],
+    "headersSize": 180,
+    "bodySize": 20,
+    "postData": {
+      "mimeType": "application/octet-stream",
+      "text": "raw=not-json&bytes=\u0000"
+    }
+  },
+  "response": {
+    "status": 201,
+    "statusText": "Created",
+    "httpVersion": "HTTP/2",
+    "headers": [
+      {
+        "name": "content-type",
+        "value": "text/plain"
+      }
+    ],
+    "headersSize": 96,
+    "bodySize": 2,
+    "content": {
+      "mimeType": "text/plain",
+      "text": "ok"
+    }
+  },
+  "timing": {
+    "startedAt": "2026-06-08T10:15:30.123Z",
+    "durationMs": 91.9,
+    "blockedMs": 1.0,
+    "dnsMs": 2.0,
+    "connectMs": 30.0,
+    "sslMs": 20.0,
+    "sendMs": 3.0,
+    "waitMs": 40.0,
+    "receiveMs": 15.9
+  },
+  "trace": {
+    "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+    "trigger": {
+      "functionName": "submitUpload",
+      "url": "https://example.com/app.js",
+      "lineNumber": 12,
+      "columnNumber": 34
+    }
+  }
+}

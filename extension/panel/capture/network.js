@@ -9,21 +9,29 @@ export function startNetworkCapture({ chromeDevtools, sendJson, render }) {
   chromeDevtools.network.onRequestFinished.addListener((entry) => {
     if (isIngestRequest(entry)) return;
 
-    sendJson(ENDPOINTS.har, minimalNetworkEvent(entry));
+    const sendEntry = (content, encoding) => {
+      sendJson(ENDPOINTS.har, minimalNetworkEvent(entry, { content, encoding }));
 
-    render("trace", {
-      method: entry.request?.method,
-      url: sanitizedUrl(entry.request?.url),
-      status: entry.response?.status,
-      ms: Number(entry.time) || 0,
-    });
+      render("trace", {
+        method: entry.request?.method,
+        url: sanitizedUrl(entry.request?.url),
+        status: entry.response?.status,
+        ms: Number(entry.time) || 0,
+      });
+    };
+
+    if (typeof entry.getContent === "function") {
+      entry.getContent((content, encoding) => sendEntry(content, encoding));
+    } else {
+      sendEntry();
+    }
   });
 }
 
-function minimalNetworkEvent(entry) {
+function minimalNetworkEvent(entry, responseBody = {}) {
   return {
     request: minimalRequest(entry.request),
-    response: minimalResponse(entry.response),
+    response: minimalResponse(entry.response, responseBody),
     timing: minimalTiming(entry),
     trace: minimalTrace(entry),
   };
@@ -37,10 +45,25 @@ function minimalRequest(request = {}) {
     headers: request.headers,
     headersSize: request.headersSize,
     bodySize: request.bodySize,
+    postData: request.postData
+      ? {
+          mimeType: request.postData.mimeType,
+          text: request.postData.text,
+        }
+      : undefined,
   };
 }
 
-function minimalResponse(response = {}) {
+function minimalResponse(response = {}, body = {}) {
+  const content =
+    response.content || body.content || body.encoding
+      ? {
+          mimeType: response.content?.mimeType,
+          text: body.content,
+          encoding: body.encoding,
+        }
+      : undefined;
+
   return {
     status: response.status,
     statusText: response.statusText,
@@ -48,7 +71,7 @@ function minimalResponse(response = {}) {
     headers: response.headers,
     headersSize: response.headersSize,
     bodySize: response.bodySize,
-    content: response.content ? { mimeType: response.content.mimeType } : undefined,
+    content,
   };
 }
 

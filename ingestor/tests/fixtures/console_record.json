@@ -1,0 +1,6 @@
+{
+  "level": "error",
+  "args": ["upload failed", 42],
+  "url": "https://example.com/app",
+  "capturedAt": "2026-06-08T10:15:30.123Z"
+}

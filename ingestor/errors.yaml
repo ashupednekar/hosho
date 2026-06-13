@@ -1,9 +1,13 @@
 errors:
   - code: ERR-CAPTURE-001
-    detail_en_US: "unsupported console payload"
+    detail_en_US: "console payload must include a level and optional args/url/capturedAt fields"
   - code: ERR-CAPTURE-002
-    detail_en_US: "invalid request/response/timing payload: [err]"
+    detail_en_US: "HAR payload must include valid request, response, and timing fields: [err]"
   - code: ERR-OTEL-001
-    detail_en_US: "request body not a valid json"
+    detail_en_US: "failed to prepare OTLP telemetry: [err]"
   - code: ERR-OTEL-002
-    detail_en_US: "error exporting request: [err]"
+    detail_en_US: "failed to build OTLP exporter: [err]"
+  - code: ERR-OTEL-003
+    detail_en_US: "failed to export OTLP telemetry: [err]"
+  - code: ERR-OTEL-004
+    detail_en_US: "cannot export HAR trace without usable timing: [err]"

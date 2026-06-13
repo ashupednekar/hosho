@@ -4,84 +4,167 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Hosho Panel</title>
-  </head>
-  <body style="
-    margin: 0;
-    min-width: 420px;
-    min-height: 100vh;
-    background: #0b0f14;
-    color: #e5e7eb;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  ">
-    <main style="
-      max-width: 920px;
-      margin: 0 auto;
-      padding: 20px;
-      box-sizing: border-box;
-    ">
-      <header style="
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        background: #101114;
+        color: #e8e6df;
+      }
+
+      body {
+        margin: 0;
+        min-width: 420px;
+        min-height: 100vh;
+      }
+
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 18px;
+        box-sizing: border-box;
+      }
+
+      header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 16px;
         margin-bottom: 16px;
-      ">
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 18px;
+        color: #ffffff;
+      }
+
+      p {
+        margin-top: 4px;
+        color: #aaa59a;
+        font-size: 12px;
+      }
+
+      #status {
+        border: 1px solid #4f5d50;
+        border-radius: 999px;
+        padding: 4px 9px;
+        color: #c7d6bd;
+        font-size: 11px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(180px, 280px) 1fr;
+        gap: 14px;
+      }
+
+      section {
+        min-width: 0;
+      }
+
+      h2 {
+        margin-bottom: 8px;
+        font-size: 12px;
+        color: #d8d3c7;
+      }
+
+      #errors {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .error-row,
+      .empty,
+      #output {
+        border: 1px solid #34373d;
+        border-radius: 6px;
+        background: #17191d;
+      }
+
+      .error-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 4px 8px;
+        padding: 10px;
+      }
+
+      .error-row strong {
+        color: #ffb4a8;
+        font-size: 12px;
+      }
+
+      .count {
+        color: #e8e6df;
+        font-size: 12px;
+      }
+
+      .message {
+        grid-column: 1 / -1;
+        color: #c9c3b8;
+        font-size: 12px;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+      }
+
+      .empty {
+        padding: 10px;
+        color: #8f9589;
+        font-size: 12px;
+      }
+
+      #output {
+        margin: 0;
+        min-height: 280px;
+        max-height: calc(100vh - 120px);
+        overflow: auto;
+        color: #d8d3c7;
+        padding: 12px;
+        box-sizing: border-box;
+        font-size: 12px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+
+      @media (max-width: 700px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
         <div>
-          <h1 style="
-            margin: 0 0 4px;
-            font-size: 18px;
-            font-weight: 700;
-            color: #f9fafb;
-          ">Hosho</h1>
-          <p style="
-            margin: 0;
-            color: #9ca3af;
-            font-size: 12px;
-          ">DevTools ingest panel</p>
+          <h1>Hosho</h1>
+          <p>DevTools ingest panel</p>
         </div>
-        <span style="
-          border: 1px solid #334155;
-          border-radius: 999px;
-          padding: 4px 9px;
-          color: #94a3b8;
-          font-size: 11px;
-        ">HAR</span>
+        <span id="status">ready</span>
       </header>
 
-      <section style="
-        border: 1px solid #243041;
-        background: #111827;
-        border-radius: 8px;
-        padding: 16px;
-        box-sizing: border-box;
-      ">
-        <div style="
-          border: 1px solid #334155;
-          border-radius: 6px;
-          background: #172033;
-          color: #cbd5e1;
-          padding: 10px 12px;
-          margin-bottom: 14px;
-          font-size: 12px;
-        ">Forwarding HAR entries to /ingest/har and browser logs to /ingest/log.</div>
+      <div class="grid">
+        <section>
+          <h2>Errors</h2>
+          <ul id="errors">
+            <li class="empty">No errors</li>
+          </ul>
+        </section>
 
-        <pre id="output" style="
-          margin: 0;
-          min-height: 260px;
-          max-height: calc(100vh - 170px);
-          overflow: auto;
-          border: 1px solid #243041;
-          border-radius: 6px;
-          background: #05070a;
-          color: #cbd5e1;
-          padding: 12px;
-          box-sizing: border-box;
-          font-size: 12px;
-          line-height: 1.5;
-          white-space: pre-wrap;
-          overflow-wrap: anywhere;
-        ">Waiting for activity...</pre>
-      </section>
+        <section>
+          <h2>Activity</h2>
+          <pre id="output">Waiting for activity...</pre>
+        </section>
+      </div>
     </main>
 
     <script type="module" src="panel/index.js"></script>

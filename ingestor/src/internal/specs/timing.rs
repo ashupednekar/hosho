@@ -19,12 +19,6 @@ impl RequestTiming {
     pub fn start_unix_nano(&self) -> Option<u64> {
         unix_nano(self.started_at.as_deref())
     }
-
-    pub fn end_unix_nano(&self) -> Option<u64> {
-        let duration_ns = (self.duration_ms? * 1_000_000.0).round();
-        self.start_unix_nano()?
-            .checked_add(duration_ns.max(0.0) as u64)
-    }
 }
 
 pub fn unix_nano(timestamp: Option<&str>) -> Option<u64> {
